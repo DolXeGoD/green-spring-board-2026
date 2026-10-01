@@ -1,4 +1,4 @@
-package com.green.spring_board;
+package com.green.spring_board.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
