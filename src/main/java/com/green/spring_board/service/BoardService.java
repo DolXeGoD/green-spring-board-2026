@@ -60,12 +60,14 @@ public class BoardService {
         }
         Board board = optionalBoards.get();
 
-        if(boardCreateRequest.getTitle() != null && !boardCreateRequest.getTitle().isBlank()) {
+        if(boardCreateRequest.getTitle() == null || boardCreateRequest.getTitle().isBlank()) {
             board.setTitle(boardCreateRequest.getTitle());
         }
+
         if(boardCreateRequest.getContent() != null && !boardCreateRequest.getContent().isBlank()) {
             board.setContent(boardCreateRequest.getContent());
         }
+
         boardRepository.save(board);
     }
 
