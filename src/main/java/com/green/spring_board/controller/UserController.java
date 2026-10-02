@@ -3,10 +3,13 @@ package com.green.spring_board.controller;
 import com.green.spring_board.dto.LoginRequest;
 import com.green.spring_board.dto.MyInfoResponse;
 import com.green.spring_board.dto.SignupRequest;
+import com.green.spring_board.entity.User;
 import com.green.spring_board.exceptions.ResourceConflictException;
 import com.green.spring_board.exceptions.ResourceNotFoundException;
 import com.green.spring_board.exceptions.UnauthenticatedException;
 import com.green.spring_board.exceptions.UserRequestException;
+import com.green.spring_board.repository.UserRepository;
+import com.green.spring_board.service.BoardService;
 import com.green.spring_board.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -14,11 +17,15 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Optional;
+
 @RestController
 @RequestMapping("/api/user")
 @AllArgsConstructor
 public class UserController {
     private final UserService userService;
+    private final UserRepository userRepository;
+    private final BoardService boardService;
 
     @PostMapping("/signup")
     public ResponseEntity<Void> signup(@RequestBody SignupRequest signupRequest) {
@@ -67,9 +74,56 @@ public class UserController {
         }
 
         // 2. 세션에서 유저 아이디 뽑아옴
+        int userId = (int) session.getAttribute("userId");
+        MyInfoResponse response = userService.getUserInfo(userId);
 
-        // 3. 유저 아이디로 DB 조회함
-        // 4. DB에서 이 유저의 닉네임과 이메일을 받아옴
-        // 5. 돌려줌.
+        return ResponseEntity.ok().body(response);
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(
+            HttpServletRequest request
+    ){
+        HttpSession session = request.getSession(false);
+
+        if(session == null || session.getAttribute("userId") == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        session.invalidate();
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping
+    public ResponseEntity<Void> updateUserInfo(
+            HttpServletRequest request,
+            @RequestBody MyInfoResponse myInfoResponse
+    ){
+        HttpSession session = request.getSession(false);
+        if(session == null || session.getAttribute("userId") == null) {
+            return ResponseEntity.status(401).build();
+        }
+        int userId = (int) session.getAttribute("userId");
+        userService.updateUserInfo(userId, myInfoResponse);
+        return ResponseEntity.ok().build();
+    }
+
+    // 유저 탈퇴 기능
+    @DeleteMapping
+    public ResponseEntity<Void> deleteUser(
+            HttpServletRequest request
+    ){
+        HttpSession session = request.getSession(false);
+        if(session == null || session.getAttribute("userId") == null) {
+            return ResponseEntity.status(401).build();
+        }
+        int userId = (int) session.getAttribute("userId");
+
+        // 1. DB 삭제
+        userService.deleteUser(userId);
+        // 2. 세션 비활성화
+        session.invalidate();
+
+        return ResponseEntity.noContent().build();
     }
 }

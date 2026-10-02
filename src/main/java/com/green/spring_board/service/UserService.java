@@ -1,6 +1,7 @@
 package com.green.spring_board.service;
 
 import com.green.spring_board.dto.LoginRequest;
+import com.green.spring_board.dto.MyInfoResponse;
 import com.green.spring_board.dto.SignupRequest;
 import com.green.spring_board.entity.User;
 import com.green.spring_board.exceptions.ResourceConflictException;
@@ -9,6 +10,7 @@ import com.green.spring_board.exceptions.UnauthenticatedException;
 import com.green.spring_board.exceptions.UserRequestException;
 import com.green.spring_board.repository.UserRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -64,5 +66,55 @@ public class UserService {
 
         // 3. 로그인 성공
         return user.getId();
+    }
+
+    public MyInfoResponse getUserInfo(int userId){
+        Optional<User> userOptional = userRepository.findById(userId);
+        if(userOptional.isEmpty()) {
+            throw new ResourceNotFoundException("User not found");
+        }
+        User user = userOptional.get();
+
+        // 4. DB에서 이 유저의 닉네임과 이메일을 받아옴
+        String email = user.getEmail();
+        String nickname = user.getNickname();
+
+        // 5. 돌려줌.
+        MyInfoResponse myInfoResponse = new MyInfoResponse();
+        myInfoResponse.setEmail(email);
+        myInfoResponse.setNickname(nickname);
+
+        return myInfoResponse;
+    }
+
+    public void updateUserInfo(int userId, MyInfoResponse myInfoResponse) {
+        Optional<User> userOptional = userRepository.findById(userId);
+        if(userOptional.isEmpty()){
+            throw new ResourceNotFoundException("User not found");
+        }
+        User user = userOptional.get();
+
+        if(myInfoResponse.getEmail()!=null
+                && !myInfoResponse.getEmail().isBlank()
+                && !myInfoResponse.getEmail().equals(user.getEmail())
+        ){
+            user.setEmail(myInfoResponse.getEmail());
+        }
+
+        if(myInfoResponse.getNickname()!=null
+                && !myInfoResponse.getNickname().isBlank()
+        ) {
+            user.setNickname(myInfoResponse.getNickname());
+        }
+        userRepository.save(user);
+    }
+
+    public void deleteUser(int userId){
+        Optional<User> userOptional = userRepository.findById(userId);
+        if(userOptional.isEmpty()){
+            throw new ResourceNotFoundException("User not found");
+        }
+        User user = userOptional.get();
+        userRepository.delete(user);
     }
 }
