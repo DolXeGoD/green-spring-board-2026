@@ -4,10 +4,7 @@ import com.green.spring_board.dto.LoginRequest;
 import com.green.spring_board.dto.MyInfoResponse;
 import com.green.spring_board.dto.SignupRequest;
 import com.green.spring_board.dto.UserUpdateRequest;
-import com.green.spring_board.exceptions.ResourceConflictException;
-import com.green.spring_board.exceptions.ResourceNotFoundException;
 import com.green.spring_board.exceptions.UnauthenticatedException;
-import com.green.spring_board.exceptions.UserRequestException;
 import com.green.spring_board.repository.UserRepository;
 import com.green.spring_board.service.BoardService;
 import com.green.spring_board.service.UserService;
@@ -28,16 +25,8 @@ public class UserController {
 
     @PostMapping("/signup")
     public ResponseEntity<Void> signup(@Valid @RequestBody SignupRequest signupRequest) {
-        try{
-            userService.signup(signupRequest);
-            return ResponseEntity.ok().build();
-        } catch (ResourceConflictException e){
-            return ResponseEntity.status(409).build();
-        } catch (UserRequestException e){
-            return ResponseEntity.badRequest().build();
-        } catch (Exception e){
-            return ResponseEntity.internalServerError().build();
-        }
+        userService.signup(signupRequest);
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/login")
@@ -45,20 +34,11 @@ public class UserController {
             @Valid @RequestBody LoginRequest loginRequest,
             HttpServletRequest httpServletRequest
     ){
-        try{
-            int userId = userService.login(loginRequest);
-            HttpSession session = httpServletRequest.getSession();
-            httpServletRequest.changeSessionId();
-            session.setAttribute("userId", userId);
-            return ResponseEntity.ok().build();
-
-        }catch (ResourceNotFoundException e){
-            return ResponseEntity.notFound().build();
-        }catch (UnauthenticatedException e){
-            return ResponseEntity.status(401).build();
-        }catch (Exception e){
-            return ResponseEntity.internalServerError().build();
-        }
+        int userId = userService.login(loginRequest);
+        HttpSession session = httpServletRequest.getSession();
+        httpServletRequest.changeSessionId();
+        session.setAttribute("userId", userId);
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/logout")
@@ -68,7 +48,7 @@ public class UserController {
         HttpSession session = request.getSession(false);
 
         if(session == null || session.getAttribute("userId") == null) {
-            return ResponseEntity.status(401).build();
+            throw new UnauthenticatedException("로그인이 필요합니다.");
         }
 
         session.invalidate();
@@ -83,7 +63,7 @@ public class UserController {
         HttpSession session = httpServletRequest.getSession(false);
 
         if(session == null || session.getAttribute("userId") == null) {
-            return ResponseEntity.status(401).build();
+            throw new UnauthenticatedException("로그인이 필요합니다.");
         }
 
         // 2. 세션에서 유저 아이디 뽑아옴
@@ -101,7 +81,7 @@ public class UserController {
     ){
         HttpSession session = request.getSession(false);
         if(session == null || session.getAttribute("userId") == null) {
-            return ResponseEntity.status(401).build();
+            throw new UnauthenticatedException("로그인이 필요합니다.");
         }
         int userId = (int) session.getAttribute("userId");
         userService.updateUserInfo(userId, userUpdateRequest);
@@ -115,7 +95,7 @@ public class UserController {
     ){
         HttpSession session = request.getSession(false);
         if(session == null || session.getAttribute("userId") == null) {
-            return ResponseEntity.status(401).build();
+            throw new UnauthenticatedException("로그인이 필요합니다.");
         }
         int userId = (int) session.getAttribute("userId");
 

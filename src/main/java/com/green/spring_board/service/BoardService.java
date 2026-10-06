@@ -5,7 +5,6 @@ import com.green.spring_board.dto.BoardUpdateRequest;
 import com.green.spring_board.entity.User;
 import com.green.spring_board.exceptions.ResourceNotFoundException;
 import com.green.spring_board.exceptions.UnauthenticatedException;
-import com.green.spring_board.exceptions.UserRequestException;
 import com.green.spring_board.dto.BoardCreateRequest;
 import com.green.spring_board.repository.BoardRepository;
 import com.green.spring_board.entity.Board;
@@ -78,13 +77,6 @@ public class BoardService {
     }
 
     public int createBoard(BoardCreateRequest boardCreateRequest, Integer userId) {
-        if(boardCreateRequest.getTitle() == null || boardCreateRequest.getTitle().isBlank()){
-            throw new UserRequestException("잘못된 입력값 입니다.");
-        }
-        if(boardCreateRequest.getContent() == null || boardCreateRequest.getContent().isBlank()){
-            throw new UserRequestException("잘못된 입력값 입니다.");
-        }
-
         // userId 유효성 체크 (해당 userId의 유저가 정상적으로 존재하는지)
         // TODO :: 이후 삭제/탈퇴 유저에 대한 검증도 추가 필요
         Optional<User> user = userRepository.findById(userId);
@@ -96,7 +88,6 @@ public class BoardService {
         board.setTitle(boardCreateRequest.getTitle());
         board.setContent(boardCreateRequest.getContent());
         board.setUser(user.get());
-
         Board savedBoard = boardRepository.save(board);
 
         return savedBoard.getId();
@@ -110,7 +101,7 @@ public class BoardService {
         }
         Board board = optionalBoards.get();
 
-        if(boardUpdateRequest.getTitle() == null || boardUpdateRequest.getTitle().isBlank()) {
+        if(boardUpdateRequest.getTitle() != null && !boardUpdateRequest.getTitle().isBlank()) {
             board.setTitle(boardUpdateRequest.getTitle());
         }
 
