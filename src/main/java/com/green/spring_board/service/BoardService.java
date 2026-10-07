@@ -101,7 +101,7 @@ public class BoardService {
                             board.getContent(),
                             board.getHits(),
                             board.getLikeCount(),
-                            (userId == -1) ? false : likeRepository.existsByUserIdAndBoardId(userId, board.getId()),
+                            likeRepository.existsByUserIdAndBoardId(userId, board.getId()),
                             board.getUser().getId(),
                             board.getUser().getNickname(),
                             board.getCreatedDatetime(),

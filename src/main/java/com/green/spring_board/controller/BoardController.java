@@ -62,10 +62,10 @@ public class BoardController {
     ){
         HttpSession session = httpServletRequest.getSession(false);
 
-        int userId = -1;
-        if(session != null && session.getAttribute("userId") != null) {
-            userId = (int) session.getAttribute("userId");
+        if(session == null || session.getAttribute("userId") == null) {
+            throw new UnauthenticatedException("로그인이 필요합니다.");
         }
+        int userId = (int) session.getAttribute("userId");
 
         List<BoardResponse> response = boardService.getMyBoards(userId);
 
