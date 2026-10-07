@@ -5,6 +5,7 @@ import com.green.spring_board.dto.MyInfoResponse;
 import com.green.spring_board.dto.SignupRequest;
 import com.green.spring_board.dto.UserUpdateRequest;
 import com.green.spring_board.entity.User;
+import com.green.spring_board.exceptions.AuthorizationFailureException;
 import com.green.spring_board.exceptions.ResourceConflictException;
 import com.green.spring_board.exceptions.ResourceNotFoundException;
 import com.green.spring_board.exceptions.UnauthenticatedException;
@@ -87,6 +88,10 @@ public class UserService {
         }
         User user = userOptional.get();
 
+        if(user.getId() != userId){
+            throw new AuthorizationFailureException("본인의 정보만 수정할 수 있습니다.");
+        }
+
         if(userUpdateRequest.getEmail()!=null
                 && !userUpdateRequest.getEmail().isBlank()
                 && !userUpdateRequest.getEmail().equals(user.getEmail())
@@ -108,6 +113,11 @@ public class UserService {
             throw new ResourceNotFoundException("User not found");
         }
         User user = userOptional.get();
+
+        if(user.getId() != userId){
+            throw new AuthorizationFailureException("본인만 탈퇴할 수 있습니다.");
+        }
+
         userRepository.delete(user);
     }
 }
