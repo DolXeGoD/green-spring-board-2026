@@ -77,6 +77,31 @@ public class BoardService {
         );
     }
 
+    public List<BoardResponse> getMyBoards(int userId){
+        List<Board> boards = boardRepository.findByUserId(userId);
+
+        // 1. List<BoardResponse> 형태의 빈 리스트 생성
+        List<BoardResponse> boardResponses = new ArrayList<>();
+
+        // 2. Board 개수만큼 반복하며 new BoardResponse 생성
+        for (Board board : boards) {
+            // 3. 1번에서 만든 리스트에 추가
+            boardResponses.add(
+                    new BoardResponse(
+                            board.getId(),
+                            board.getTitle(),
+                            board.getContent(),
+                            board.getHits(),
+                            board.getUser().getId(),
+                            board.getUser().getNickname(),
+                            board.getCreatedDatetime(),
+                            board.getUpdatedDatetime()
+                    )
+            );
+        }
+        return boardResponses;
+    }
+
     public int createBoard(BoardCreateRequest boardCreateRequest, Integer userId) {
         // userId 유효성 체크 (해당 userId의 유저가 정상적으로 존재하는지)
         // TODO :: 이후 삭제/탈퇴 유저에 대한 검증도 추가 필요
