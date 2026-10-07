@@ -108,4 +108,25 @@ public class BoardController {
         boardService.deleteBoard(id, userId);
         return ResponseEntity.ok(ApiResponse.ok());
     }
+
+    @PostMapping("/like/{id}")
+    public ResponseEntity<ApiResponse<Void>> likeBoard(
+            @PathVariable int id,
+            HttpServletRequest httpServletRequest
+    ){
+        HttpSession session = httpServletRequest.getSession(false);
+        if(session == null || session.getAttribute("userId") == null) {
+            throw new UnauthenticatedException("로그인이 필요합니다.");
+        }
+
+        int userId = (int) session.getAttribute("userId");
+
+        boardService.pressLike(id, userId);
+        return ResponseEntity.ok(ApiResponse.ok());
+
+        // 다시 눌렀을 때 취소
+        // 좋아요 수
+        // 상세 눌렀을 때 어느 유저들이 이 게시글 좋아요를 눌렀는지
+        // 내가 이 게시글 좋아요 눌렀는지
+    }
 }
