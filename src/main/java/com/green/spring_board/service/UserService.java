@@ -88,10 +88,6 @@ public class UserService {
         }
         User user = userOptional.get();
 
-        if(user.getId() != userId){
-            throw new AuthorizationFailureException("본인의 정보만 수정할 수 있습니다.");
-        }
-
         if(userUpdateRequest.getEmail()!=null
                 && !userUpdateRequest.getEmail().isBlank()
                 && !userUpdateRequest.getEmail().equals(user.getEmail())
@@ -113,11 +109,6 @@ public class UserService {
             throw new ResourceNotFoundException("User not found");
         }
         User user = userOptional.get();
-
-        if(user.getId() != userId){
-            throw new AuthorizationFailureException("본인만 탈퇴할 수 있습니다.");
-        }
-
         userRepository.delete(user);
     }
 }
