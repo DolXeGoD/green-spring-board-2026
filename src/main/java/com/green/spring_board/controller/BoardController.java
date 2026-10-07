@@ -124,7 +124,6 @@ public class BoardController {
         boardService.pressLike(id, userId);
         return ResponseEntity.ok(ApiResponse.ok());
 
-        // 다시 눌렀을 때 취소
         // 좋아요 수
         // 상세 눌렀을 때 어느 유저들이 이 게시글 좋아요를 눌렀는지
         // 내가 이 게시글 좋아요 눌렀는지
