@@ -6,6 +6,7 @@ import com.green.spring_board.dto.LikeDetailResponse;
 import com.green.spring_board.entity.Like;
 import com.green.spring_board.entity.User;
 import com.green.spring_board.exceptions.AuthorizationFailureException;
+import com.green.spring_board.exceptions.InvalidStateException;
 import com.green.spring_board.exceptions.ResourceNotFoundException;
 import com.green.spring_board.exceptions.UnauthenticatedException;
 import com.green.spring_board.dto.BoardCreateRequest;
@@ -14,10 +15,7 @@ import com.green.spring_board.entity.Board;
 import com.green.spring_board.repository.LikeRepository;
 import com.green.spring_board.repository.UserRepository;
 import lombok.AllArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -32,15 +30,23 @@ public class BoardService {
     private LikeRepository likeRepository;
 
     // 전체 조회
-    public Page<BoardResponse> getAllBoards(int userId, int page, int size) {
-        // List<Board> -> List<BoardResponse> 형태로 변환 후 반환
-        Pageable pageable = PageRequest.of(page, size);
+    public Page<BoardResponse> getAllBoards(int userId, int page, int size, String order) {
+        Sort sort;
+        if(order.equals("latest")) {
+            sort = Sort.by(Sort.Direction.DESC, "createdDatetime");
+        } else if (order.equals("likes")) {
+            sort = Sort.by(Sort.Direction.DESC, "likeCount");
+        } else if (order.equals("views")) {
+            sort = Sort.by(Sort.Direction.DESC, "hits");
+        } else {
+            throw new InvalidStateException("잘못된 정렬 옵션입니다.");
+        }
+
+        Pageable pageable = PageRequest.of(page, size, sort);
         Page<Board> boards = boardRepository.findAll(pageable);
 
-        // 1. List<BoardResponse> 형태의 빈 리스트 생성
         List<BoardResponse> boardResponses = new ArrayList<>();
 
-        // 2. Board 개수만큼 반복하며 new BoardResponse 생성
         for (Board board : boards) {
             // 3. 1번에서 만든 리스트에 추가
             boardResponses.add(
