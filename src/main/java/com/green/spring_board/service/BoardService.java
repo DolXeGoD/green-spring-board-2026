@@ -43,7 +43,7 @@ public class BoardService {
         }
 
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<Board> boards = boardRepository.findAll(pageable);
+        Page<Board> boards = boardRepository.findByIsDeletedFalse(pageable);
 
         List<BoardResponse> boardResponses = new ArrayList<>();
 
@@ -78,10 +78,15 @@ public class BoardService {
         }
         Board board = optionalBoard.get();
 
+        if(board.isDeleted()){
+            throw new ResourceNotFoundException("삭제된 게시글입니다.");
+        }
+
         User user = board.getUser();
         System.out.println(user.getNickname());
         board.setHits(board.getHits() + 1);
         boardRepository.save(board);
+
         return new BoardResponse(
                 board.getId(),
                 board.getTitle(),
@@ -97,7 +102,7 @@ public class BoardService {
     }
 
     public List<BoardResponse> getMyBoards(int userId){
-        List<Board> boards = boardRepository.findByUserId(userId);
+        List<Board> boards = boardRepository.findByUserIdAndIsDeletedFalse(userId);
 
         // 1. List<BoardResponse> 형태의 빈 리스트 생성
         List<BoardResponse> boardResponses = new ArrayList<>();
@@ -176,7 +181,8 @@ public class BoardService {
             throw new AuthorizationFailureException("게시글 작업 권한이 없습니다.");
         }
 
-        boardRepository.deleteById(id);
+        board.setDeleted(true);
+        boardRepository.save(board);
     }
 
     public void pressLike(int id, int userId) {

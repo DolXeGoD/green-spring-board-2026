@@ -32,4 +32,7 @@ public class Comment {
 
     @Column(nullable = false, insertable = false, updatable = false)
     private LocalDateTime createdDatetime;
+
+    @Column(nullable = false)
+    private boolean isDeleted;
 }
