@@ -5,6 +5,8 @@ import com.green.spring_board.exceptions.UnauthenticatedException;
 import com.green.spring_board.repository.UserRepository;
 import com.green.spring_board.service.BoardService;
 import com.green.spring_board.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
@@ -13,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "그린 커뮤니티 회원 API", description = "회원 관련 API 모음입니다.")
 @RestController
 @RequestMapping("/api/user")
 @AllArgsConstructor
@@ -21,6 +24,7 @@ public class UserController {
     private final UserRepository userRepository;
     private final BoardService boardService;
 
+    @Operation(summary = "회원가입 API", description = "회원가입을 할 때 씀")
     @PostMapping("/signup")
     public ResponseEntity<ApiResponse<Void>> signup(@Valid @RequestBody SignupRequest signupRequest) {
         userService.signup(signupRequest);
