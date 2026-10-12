@@ -12,11 +12,9 @@ import lombok.AllArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.util.Optional;
 
 @Service
 @AllArgsConstructor
@@ -75,16 +73,9 @@ public class UserService {
         return new LoginResponse(accessToken);
     }
 
-    public MyInfoResponse getUserInfo(int userId){
-        Optional<User> userOptional = userRepository.findById(userId);
-        if(userOptional.isEmpty()) {
-            throw new ResourceNotFoundException("User not found");
-        }
-        User user = userOptional.get();
-
-        if(user.getState() == UserState.QUITTED){
-            throw new ResourceNotFoundException("탈퇴된 회원입니다.");
-        }
+    public MyInfoResponse getUserInfo(){
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(username);
 
         // 4. DB에서 이 유저의 닉네임과 이메일을 받아옴
         String email = user.getEmail();
@@ -98,16 +89,9 @@ public class UserService {
         return myInfoResponse;
     }
 
-    public void updateUserInfo(int userId, UserUpdateRequest userUpdateRequest) {
-        Optional<User> userOptional = userRepository.findById(userId);
-        if(userOptional.isEmpty()){
-            throw new ResourceNotFoundException("User not found");
-        }
-        User user = userOptional.get();
-
-        if(user.getState() == UserState.QUITTED){
-            throw new ResourceNotFoundException("탈퇴된 회원입니다.");
-        }
+    public void updateUserInfo(UserUpdateRequest userUpdateRequest) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(username);
 
         if(userUpdateRequest.getEmail()!=null
                 && !userUpdateRequest.getEmail().isBlank()
@@ -124,14 +108,11 @@ public class UserService {
         userRepository.save(user);
     }
 
-    public void deleteUser(int userId){
-        Optional<User> userOptional = userRepository.findById(userId);
-        if(userOptional.isEmpty()){
-            throw new ResourceNotFoundException("User not found");
-        }
-        User user = userOptional.get();
-
+    public void deleteUser(){
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(username);
         user.setState(UserState.QUITTED);
         userRepository.save(user);
+        // TODO :: 리프레시 토큰 삭제
     }
 }

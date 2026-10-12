@@ -6,12 +6,12 @@ import com.green.spring_board.entity.Board;
 import com.green.spring_board.entity.Comment;
 import com.green.spring_board.entity.User;
 import com.green.spring_board.exceptions.AuthorizationFailureException;
-import com.green.spring_board.exceptions.InvalidStateException;
 import com.green.spring_board.exceptions.ResourceNotFoundException;
 import com.green.spring_board.repository.BoardRepository;
 import com.green.spring_board.repository.CommentRepository;
 import com.green.spring_board.repository.UserRepository;
 import lombok.AllArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -27,21 +27,16 @@ public class CommentService {
 
     public void createComment(
             CommentCreateRequest commentCreateRequest,
-            int userId,
             int boardId
     ) {
-        Optional<User> userOptional = userRepository.findById(userId);
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(username);
         Optional<Board> boardOptional = boardRepository.findById(boardId);
-
-        if (userOptional.isEmpty()) {
-            throw new ResourceNotFoundException("User not found");
-        }
 
         if (boardOptional.isEmpty()) {
             throw new ResourceNotFoundException("Board not found");
         }
 
-        User user = userOptional.get();
         Board board = boardOptional.get();
 
         Comment comment = new Comment();
@@ -73,14 +68,17 @@ public class CommentService {
         return commentResponses;
     }
 
-    public void deleteComment(int commentId, int userId) {
+    public void deleteComment(int commentId) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(username);
+
         Optional<Comment> commentOptional = commentRepository.findById(commentId);
         if (commentOptional.isEmpty()) {
             throw new ResourceNotFoundException("Comment not found");
         }
         Comment comment = commentOptional.get();
 
-        if(comment.getUser().getId() != userId){
+        if(comment.getUser().getId() != user.getId()){
             throw new AuthorizationFailureException("삭제할 권한이 없습니다.");
         }
 
@@ -90,9 +88,10 @@ public class CommentService {
 
     public void updateComment(
             CommentCreateRequest commentCreateRequest,
-            int commentId,
-            int userId
+            int commentId
     ) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(username);
         Optional<Comment> commentOptional = commentRepository.findById(commentId);
         if (commentOptional.isEmpty()) {
             throw new ResourceNotFoundException("Comment not found");
@@ -103,7 +102,7 @@ public class CommentService {
             throw new ResourceNotFoundException("삭제된 댓글입니다");
         }
 
-        if(comment.getUser().getId() != userId){
+        if(comment.getUser().getId() != user.getId()){
             throw new AuthorizationFailureException("수정할 권한이 없습니다.");
         }
 
