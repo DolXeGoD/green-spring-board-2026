@@ -1,11 +1,12 @@
 package com.green.spring_board.service;
 
 import com.green.spring_board.dto.*;
+import com.green.spring_board.entity.RefreshToken;
 import com.green.spring_board.entity.User;
 import com.green.spring_board.exceptions.ResourceConflictException;
-import com.green.spring_board.exceptions.ResourceNotFoundException;
 import com.green.spring_board.exceptions.UnauthenticatedException;
 import com.green.spring_board.global.UserState;
+import com.green.spring_board.repository.RefreshTokenRepository;
 import com.green.spring_board.repository.UserRepository;
 import com.green.spring_board.security.JwtTokenProvider;
 import lombok.AllArgsConstructor;
@@ -16,10 +17,17 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
+import java.util.List;
+
+
 @Service
 @AllArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
+    private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider tokenProvider;
@@ -59,18 +67,28 @@ public class UserService {
         // 1. 이메일 존재하는건지 확인
         User user = userRepository.findByUsername(loginRequest.getUsername());
 
-        if(user == null){
-            throw new ResourceNotFoundException("User not found");
-        }
-
-        if(user.getState() == UserState.QUITTED){
-            throw new ResourceNotFoundException("탈퇴된 회원입니다.");
-        }
-
         // 액세스 토큰 발급
         String accessToken = tokenProvider.generateAccessToken(user.getUsername());
+        String refreshToken = tokenProvider.generateRefreshToken(user.getUsername());
+
+        // 1. 해당 유저의 기존 리프레시 토큰(들) 삭제
+        // TODO :: 현재 deleteByUserId라는 유저 아이디를 기준으로 리프레시 토큰을 삭제해주는 기능이 있지만,
+        //  해당 기능(JPA 파생 삭제 메서드)을 사용하려면 Transaction이 필요해 임시 우회
+        List<RefreshToken> tokens = refreshTokenRepository.findByUserId(user.getId());
+        refreshTokenRepository.deleteAll(tokens);
+
+        // 2. 해당 유저의 신규 리프레시 토큰 저장
+        Date expiration = tokenProvider.getExpiration(refreshToken);
+        LocalDateTime expirationDateTime =
+                expiration.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+
+        RefreshToken refresh = new RefreshToken();
+        refresh.setUser(user);
+        refresh.setToken(refreshToken);
+        refresh.setExpirationDateTime(expirationDateTime);
+        refreshTokenRepository.save(refresh);
         // 3. 로그인 성공
-        return new LoginResponse(accessToken);
+        return new LoginResponse(accessToken, refreshToken);
     }
 
     public MyInfoResponse getUserInfo(){
