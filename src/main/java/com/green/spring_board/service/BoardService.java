@@ -75,7 +75,7 @@ public class BoardService {
     }
 
     // 상세 조회
-    @Transactional(readOnly = true)
+    @Transactional
     public BoardResponse getBoard(int id) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         int userId = userRepository.findByUsername(username).getId();
