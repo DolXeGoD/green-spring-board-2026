@@ -16,6 +16,11 @@ public interface BoardRepository extends JpaRepository<Board, Integer> {
 
     Page<Board> findByIsDeletedFalse(Pageable pageable);
 
+    // JPQL를 이용해 해당 메서드가 실행할 쿼리 직접 명시
+    // 메서드 이름만으로 표현하기 어려운 복잡한 쿼리가 필요한 경우 사용
+    // FULLTEXT 인덱스를 활용하기 위해 MATCH(컬럼) AGAINST(키워드) 구문 활용
+    // 또한 ngram parser가 적용되어 있으므로 검색 목적에 따라
+    // 자연어 모드(NATURAL LANGUAGE MODE), 불리언 모드(BOOLEAN MODE) 등 검색 모드를 적절히 지정
     @Query(value = "SELECT * FROM boards WHERE is_deleted = false AND " +
             "MATCH(title) AGAINST(:keyword IN NATURAL LANGUAGE MODE)",
             nativeQuery = true)

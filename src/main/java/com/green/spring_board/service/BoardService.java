@@ -250,6 +250,8 @@ public class BoardService {
         List<Board> boards = boardRepository.searchByTitle(keyword);
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByUsername(username);
+
+        // 내가 좋아요를 누른 모든 게시글 아이디 조회
         List<Integer> likedBoardIds = likeRepository.findLikedBoardIdsByUserId(user.getId());
 
         List<BoardResponse> response = new ArrayList<>();
@@ -261,6 +263,7 @@ public class BoardService {
                     board.getContent(),
                     board.getHits(),
                     board.getLikeCount(),
+                    // 해당 board에 좋아요를 누른적이 있는지
                     likedBoardIds.contains(board.getId()),
                     board.getUser().getId(),
                     board.getUser().getNickname(),
