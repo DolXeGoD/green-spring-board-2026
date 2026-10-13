@@ -9,6 +9,7 @@ import com.green.spring_board.global.UserState;
 import com.green.spring_board.repository.RefreshTokenRepository;
 import com.green.spring_board.repository.UserRepository;
 import com.green.spring_board.security.JwtTokenProvider;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -21,6 +22,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 
 @Service
@@ -89,6 +91,41 @@ public class UserService {
         refreshTokenRepository.save(refresh);
         // 3. 로그인 성공
         return new LoginResponse(accessToken, refreshToken);
+    }
+
+    public RefreshResponse refresh(@Valid RefreshRequest refreshRequest) {
+        String userRefreshToken = refreshRequest.getRefreshToken();
+        // 1. 리프레시 토큰 위/변조 여부 검증
+        if(!tokenProvider.validateRefreshToken(userRefreshToken)) {
+            // 검증 실패 예외처리
+            throw new UnauthenticatedException("만료되었거나 유효하지 않은 리프레시 토큰입니다.");
+        }
+
+        // 2. DB 내 존재하는 리프레시 토큰인지 검증
+        Optional<RefreshToken> optionalRT = refreshTokenRepository.findByToken(userRefreshToken);
+        if (optionalRT.isEmpty()) {
+            throw new UnauthenticatedException("유효하지 않은 리프레시 토큰입니다.");
+        }
+
+        // 3. 해당 리프레시 토큰이 만료되진 않았는지 검증
+        // ! + isAfter = 만료 시간이 현재보다 이전이거나 같은 경우 (= 현재보다 미래가 아닌 경우)
+        // isBefore = 만료 시간이 현재보다 이전인 경우
+        // 만료 시각과 현재 시각이 정확히 같을 때도 만료된 것으로 처리
+        if (!optionalRT.get().getExpirationDateTime().isAfter(LocalDateTime.now())) {
+            throw new UnauthenticatedException("만료된 않은 리프레시 토큰입니다.");
+        }
+
+        // 4. 토큰 내 유저네임(subject)의 유저 정보가 유효한지 검증
+        // 해당 유저가 존재하는지, 활성화 상태인지(탈퇴하지는 않았는지) 등등
+        String username = tokenProvider.getUsernameFromToken(userRefreshToken);
+        User user = userRepository.findByUsername(username);
+        if (user == null || user.getState() != UserState.ACTIVE) {
+            throw new UnauthenticatedException("인증할 수 없는 계정입니다.");
+        }
+
+        // 5. 최종적으로 새 액세스 토큰 발급
+        String accessToken = tokenProvider.generateAccessToken(username);
+        return new RefreshResponse(accessToken);
     }
 
     public MyInfoResponse getUserInfo(){

@@ -41,6 +41,15 @@ public class UserController {
         return ResponseEntity.ok(ApiResponse.ok());
     }
 
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiResponse<RefreshResponse>> refresh(
+            @Valid @RequestBody RefreshRequest refreshRequest
+    ) {
+        // 리프레시 토큰을 이용해 새로운 액세스 토큰을 재발급 받는 API
+        RefreshResponse response = userService.refresh(refreshRequest);
+        return ResponseEntity.ok(ApiResponse.ok(response));
+    }
+
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<MyInfoResponse>> getCurrentUser(
     ){
