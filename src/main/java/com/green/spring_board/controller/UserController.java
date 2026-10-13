@@ -37,7 +37,11 @@ public class UserController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<Void>> logout(){
+    public ResponseEntity<ApiResponse<Void>> logout(
+        @RequestHeader("Authorization") String authorization
+    ){
+        String accessToken = authorization.substring(7);
+        userService.logout(accessToken);
         return ResponseEntity.ok(ApiResponse.ok());
     }
 
